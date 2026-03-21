@@ -1,4 +1,5 @@
 from lib.load_data import load_data, load_stopwords
+from nltk.stem import PorterStemmer
 import string
 
 def clean_text(txt):
@@ -9,10 +10,11 @@ def clean_text(txt):
 def tokenize_text(txt):
     txt = clean_text(txt).split()
     stopwords = load_stopwords()
+    stemmer = PorterStemmer()
     tokens = []
     for tok in txt:
         if tok not in stopwords:
-            tokens.append(tok)
+            tokens.append(stemmer.stem(tok))
     return tokens
 
 def has_matching_token(query_token, movie_token):
