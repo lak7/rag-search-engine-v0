@@ -1,5 +1,6 @@
 from ntpath import exists
 import os
+import time
 from lib.load_data import load_data, load_stopwords
 from nltk.stem import PorterStemmer
 import pickle
@@ -39,6 +40,16 @@ class InvertedIndex:
         with open(self.docmap_path, "wb") as f:
             pickle.dump(self.docmap, f)
 
+    def load(self):
+        try:
+            with open(self.index_path, "rb") as f:
+                self.index = pickle.load(f)
+            with open(self.docmap_path, "rb") as f:
+                self.docmap = pickle.load(f)
+        except:
+            print("Whoops, something went wrong")
+
+
 def build_command():
     buildInvertedIndex = InvertedIndex()
     buildInvertedIndex.build()
@@ -68,14 +79,25 @@ def has_matching_token(query_token, movie_token):
     return False 
 
 def search_query(query):
-    results = []
+    start = time.time()
+    seen, results = set(), []
     queryToken = tokenize_text(query)
-    print(f"This is the query token: {queryToken}")
-    movies = load_data()
-    for movie in movies:
-        movieToken = tokenize_text(movie["title"])
-        if has_matching_token(query_token=queryToken, movie_token=movieToken):
-            results.append(movie["title"])
+    invIdx = InvertedIndex()
+    invIdx.load()
+
+    for qTok in queryToken:
+        matching_index_ids = invIdx.get_documents(qTok)
+        for mid in matching_index_ids:
+            if mid in seen:
+                continue
+            results.append(invIdx.docmap[mid])
+            if len(results) >= 5:
+                end = time.time()
+                print("Time taken:", end - start, "seconds")
+                return results
+
+    end = time.time()
+    print("Time taken:", end - start, "seconds")
     return results
     
 
