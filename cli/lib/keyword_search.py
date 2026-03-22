@@ -1,6 +1,50 @@
+from ntpath import exists
+import os
 from lib.load_data import load_data, load_stopwords
 from nltk.stem import PorterStemmer
+import pickle
 import string
+from lib.common import CACHE_PATH
+import collections
+
+class InvertedIndex:
+    def __init__(self) -> None:
+        self.index = collections.defaultdict(set)
+        self.docmap = {}
+        self.index_path = CACHE_PATH / 'index.pkl'
+        self.docmap_path = CACHE_PATH / 'docmap.pkl'
+
+    def __add_document(self, doc_id, text):
+        tokens = tokenize_text(text)
+        for tok in set(tokens):
+            self.index[tok].add(doc_id)
+    
+    def get_documents(self, term):
+        term = term.lower()
+        return sorted(list(self.index[term]))
+
+    def build(self):
+        movies = load_data()
+        for mov in movies:
+            movId = mov["id"]
+            movText = f"{mov["title"]} {mov["description"]}"
+            self.__add_document(movId, movText)
+            self.docmap[movId] = mov
+
+    def save(self):
+        os.makedirs(CACHE_PATH, exist_ok={True})
+        with open(self.index_path, "wb") as f:
+            pickle.dump(self.index, f)
+
+        with open(self.docmap_path, "wb") as f:
+            pickle.dump(self.docmap, f)
+
+def build_command():
+    buildInvertedIndex = InvertedIndex()
+    buildInvertedIndex.build()
+    buildInvertedIndex.save()
+    docs = buildInvertedIndex.get_documents("merida")
+    print(f"First document for token 'merida' = {docs[0]}")
 
 def clean_text(txt):
     txt = txt.lower()
