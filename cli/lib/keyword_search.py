@@ -43,8 +43,7 @@ def build_command():
     buildInvertedIndex = InvertedIndex()
     buildInvertedIndex.build()
     buildInvertedIndex.save()
-    docs = buildInvertedIndex.get_documents("merida")
-    print(f"First document for token 'merida' = {docs[0]}")
+    print("Cache for inverted indexing has been successsfully built")
 
 def clean_text(txt):
     txt = txt.lower()
