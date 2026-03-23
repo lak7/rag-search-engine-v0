@@ -6,23 +6,32 @@ from nltk.stem import PorterStemmer
 import pickle
 import string
 from lib.common import CACHE_PATH
-import collections
+from collections import Counter, defaultdict
 
 class InvertedIndex:
     def __init__(self) -> None:
-        self.index = collections.defaultdict(set)
+        self.index = defaultdict(set)
         self.docmap = {}
+        self.term_frequencies = defaultdict(Counter())
         self.index_path = CACHE_PATH / 'index.pkl'
         self.docmap_path = CACHE_PATH / 'docmap.pkl'
+        self.term_frequencies_path = CACHE_PATH / 'term_frequencies.pkl'
 
     def __add_document(self, doc_id, text):
         tokens = tokenize_text(text)
         for tok in set(tokens):
             self.index[tok].add(doc_id)
+        self.term_frequencies[doc_id].update(Counter(tokens))
     
     def get_documents(self, term):
         term = term.lower()
         return sorted(list(self.index[term]))
+
+    def get_tf(self, doc_id, term):
+        token = tokenize_text(term)
+        if len(token) != 1:
+            raise ValueError("There can only be 1 token")
+        return self.term_frequencies[doc_id][token[0]]
 
     def build(self):
         movies = load_data()
@@ -34,11 +43,13 @@ class InvertedIndex:
 
     def save(self):
         os.makedirs(CACHE_PATH, exist_ok={True})
+
         with open(self.index_path, "wb") as f:
             pickle.dump(self.index, f)
-
         with open(self.docmap_path, "wb") as f:
             pickle.dump(self.docmap, f)
+        with open(self.term_frequencies_path, "wb") as f:
+            pickle.dump(self.term_frequencies, f)
 
     def load(self):
         try:
@@ -46,6 +57,8 @@ class InvertedIndex:
                 self.index = pickle.load(f)
             with open(self.docmap_path, "rb") as f:
                 self.docmap = pickle.load(f)
+            with open(self.term_frequencies_path, "rb") as f:
+                self.term_frequencies = pickle.load(f)
         except:
             print("Whoops, something went wrong")
 
