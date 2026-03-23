@@ -1,3 +1,4 @@
+import math
 from ntpath import exists
 import os
 import time
@@ -33,6 +34,15 @@ class InvertedIndex:
             raise ValueError("There can only be 1 token")
         return self.term_frequencies[doc_id][token[0]]
 
+    def get_idf(self, term):
+        token = tokenize_text(term)
+        if len(token) != 1:
+            raise ValueError("Term should not be greater than 1")
+        token = token[0]
+        doc_count = len(self.docmap)
+        term_doc_count = len(self.index[token])
+        return math.log((doc_count + 1) / (term_doc_count + 1))
+
     def build(self):
         movies = load_data()
         for mov in movies:
@@ -63,12 +73,16 @@ class InvertedIndex:
             print("Whoops, something went wrong")
 
 
-
 def tf_command(doc_id, term):
     invIdx = InvertedIndex()
     invIdx.load()
-    print(f"This many number of times {invIdx.get_tf(doc_id, term)}")
+    print(f"This many number of times in given doc {invIdx.get_tf(doc_id, term)}")
 
+def itf_command(term):
+    invIdx = InvertedIndex()
+    invIdx.load()
+    idf = invIdx.get_idf(term)
+    print(f"Inverse document frequency of '{term}': {idf:.2f}")
 
 def build_command():
     buildInvertedIndex = InvertedIndex()
