@@ -1,6 +1,6 @@
 # What it is?
 
-### This is a rag based vector search project built from scratch with minimum usage of ai tools. In this I want to explore core techniques such as inverted indexing, term frequency, keyword and semantic search, chunking, hybrid search, LLM integration, reranking, evaluation, augmented generation, agentic workflows and multimodal retrieval.
+### This is a rag based vector search project built from scratch with minimum usage of ai tools. In this I want to explore core techniques such as inverted indexing, term frequency, BM25 search, keyword and semantic search, chunking, hybrid search, LLM integration, reranking, evaluation, augmented generation, agentic workflows and multimodal retrieval.
 
 # Useful Commands
 ### To activate venv: `source .venv/bin/activate`

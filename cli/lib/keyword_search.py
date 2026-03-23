@@ -12,7 +12,7 @@ class InvertedIndex:
     def __init__(self) -> None:
         self.index = defaultdict(set)
         self.docmap = {}
-        self.term_frequencies = defaultdict(Counter())
+        self.term_frequencies = defaultdict(Counter)
         self.index_path = CACHE_PATH / 'index.pkl'
         self.docmap_path = CACHE_PATH / 'docmap.pkl'
         self.term_frequencies_path = CACHE_PATH / 'term_frequencies.pkl'
@@ -61,6 +61,13 @@ class InvertedIndex:
                 self.term_frequencies = pickle.load(f)
         except:
             print("Whoops, something went wrong")
+
+
+
+def tf_command(doc_id, term):
+    invIdx = InvertedIndex()
+    invIdx.load()
+    print(f"This many number of times {invIdx.get_tf(doc_id, term)}")
 
 
 def build_command():
