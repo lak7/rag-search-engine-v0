@@ -6,7 +6,7 @@ from lib.load_data import load_data, load_stopwords
 from nltk.stem import PorterStemmer
 import pickle
 import string
-from lib.common import CACHE_PATH
+from lib.common import BM25_K1, CACHE_PATH
 from collections import Counter, defaultdict
 
 class InvertedIndex:
@@ -34,6 +34,15 @@ class InvertedIndex:
             raise ValueError("There can only be 1 token")
         return self.term_frequencies[doc_id][token[0]]
 
+    def get_bm25_tf(self, doc_id, term, k1=BM25_K1):
+        token = tokenize_text(term)
+        if len(token) != 1:
+            raise ValueError("There can only be 1 token")
+        token = token[0]
+        tf = self.term_frequencies[doc_id][token]
+        return (tf * (k1 + 1)) / (tf + k1)
+        
+
     def get_idf(self, term):
         token = tokenize_text(term)
         if len(token) != 1:
@@ -42,6 +51,15 @@ class InvertedIndex:
         doc_count = len(self.docmap)
         term_doc_count = len(self.index[token])
         return math.log((doc_count + 1) / (term_doc_count + 1))
+
+    def get_bm25_idf(self, term: str) -> float:
+        token = tokenize_text(term)
+        if len(token) != 1:
+            raise ValueError("Term should not be greater than 1")
+        token = token[0]
+        doc_count = len(self.docmap)
+        df = len(self.index[token])
+        return math.log((doc_count - df + 0.5) / (df + 0.5) + 1)
 
     def build(self):
         movies = load_data()
@@ -91,6 +109,21 @@ def tfidf_command(doc_id, term):
     idf = invIdx.get_idf(term)
     tf_idf = tf*idf
     print(f"TF-IDF score of '{term}' in document '{doc_id}': {tf_idf:.2f}")
+
+def bm25_idf_command(term):
+    invIdx = InvertedIndex()
+    invIdx.load()
+    bm25_idf = invIdx.get_bm25_idf(term)
+    print(f"BM25 IDF score of '{term}': {bm25_idf:.2f}")
+    return float(bm25_idf)
+
+def bm25_tf_command(doc_id, term):
+    invIdx = InvertedIndex()
+    invIdx.load()
+    bm25tf = invIdx.get_bm25_tf(doc_id, term)
+    print(f"BM25 TF score of '{term}' in document '{doc_id}': {bm25tf:.2f}")
+    return bm25tf
+
 
 def build_command():
     buildInvertedIndex = InvertedIndex()
