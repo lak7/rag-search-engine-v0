@@ -35,11 +35,7 @@ class InvertedIndex:
         return self.term_frequencies[doc_id][token[0]]
 
     def get_bm25_tf(self, doc_id, term, k1=BM25_K1):
-        token = tokenize_text(term)
-        if len(token) != 1:
-            raise ValueError("There can only be 1 token")
-        token = token[0]
-        tf = self.term_frequencies[doc_id][token]
+        tf = self.get_tf(doc_id, term)
         return (tf * (k1 + 1)) / (tf + k1)
         
 
