@@ -6,7 +6,7 @@ from lib.load_data import load_data, load_stopwords
 from nltk.stem import PorterStemmer
 import pickle
 import string
-from lib.common import BM25_K1, CACHE_PATH
+from lib.common import BM25_B, BM25_K1, CACHE_PATH
 from collections import Counter, defaultdict
 
 class InvertedIndex:
@@ -14,15 +14,28 @@ class InvertedIndex:
         self.index = defaultdict(set)
         self.docmap = {}
         self.term_frequencies = defaultdict(Counter)
+        self.doc_lengths= {}
         self.index_path = CACHE_PATH / 'index.pkl'
         self.docmap_path = CACHE_PATH / 'docmap.pkl'
         self.term_frequencies_path = CACHE_PATH / 'term_frequencies.pkl'
+        self.doc_lengths_path = CACHE_PATH / "doc_lengths.pkl"
 
     def __add_document(self, doc_id, text):
         tokens = tokenize_text(text)
         for tok in set(tokens):
             self.index[tok].add(doc_id)
         self.term_frequencies[doc_id].update(Counter(tokens))
+        self.doc_lengths[doc_id] = len(tokens)
+
+    def __get_avg_doc_length(self) -> float:
+        lengths = list(self.doc_lengths.values())
+        if len(lengths) == 0:
+            return 0.0
+        total_toks_across_all_docs = 0
+        for l in lengths:
+             total_toks_across_all_docs += l
+        return (total_toks_across_all_docs / len(lengths))
+
     
     def get_documents(self, term):
         term = term.lower()
@@ -34,9 +47,15 @@ class InvertedIndex:
             raise ValueError("There can only be 1 token")
         return self.term_frequencies[doc_id][token[0]]
 
-    def get_bm25_tf(self, doc_id, term, k1=BM25_K1):
+    def get_bm25_tf(self, doc_id, term, k1=BM25_K1, b=BM25_B):
         tf = self.get_tf(doc_id, term)
-        return (tf * (k1 + 1)) / (tf + k1)
+        doc_length = self.doc_lengths[doc_id]
+        avg_doc_length = self.__get_avg_doc_length()
+        if avg_doc_length > 0:
+            length_norm = 1 - b + b * (doc_length / avg_doc_length)
+        else:
+            length_norm = 1
+        return (tf * (k1 + 1)) / (tf + k1 * length_norm)
         
 
     def get_idf(self, term):
@@ -74,6 +93,8 @@ class InvertedIndex:
             pickle.dump(self.docmap, f)
         with open(self.term_frequencies_path, "wb") as f:
             pickle.dump(self.term_frequencies, f)
+        with open(self.doc_lengths_path, "wb") as f:
+            pickle.dump(self.doc_lengths, f)
 
     def load(self):
         try:
@@ -83,6 +104,8 @@ class InvertedIndex:
                 self.docmap = pickle.load(f)
             with open(self.term_frequencies_path, "rb") as f:
                 self.term_frequencies = pickle.load(f)
+            with open(self.doc_lengths_path, "rb") as f:
+                self.doc_lengths = pickle.load(f)
         except:
             print("Whoops, something went wrong")
 
