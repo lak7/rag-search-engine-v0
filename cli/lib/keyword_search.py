@@ -2,6 +2,7 @@ import math
 from ntpath import exists
 import os
 import time
+import token
 from lib.load_data import load_data, load_stopwords
 from nltk.stem import PorterStemmer
 import pickle
@@ -76,6 +77,31 @@ class InvertedIndex:
         df = len(self.index[token])
         return math.log((doc_count - df + 0.5) / (df + 0.5) + 1)
 
+    def bm25(self, doc_id, term):
+        final_bm25_tf = self.get_bm25_tf(doc_id, term)
+        final_bm25_idf = self.get_bm25_idf(term)
+        return final_bm25_tf*final_bm25_idf
+
+    def bm25_search(self, query, limit):
+        tokens = tokenize_text(query)
+        scores = defaultdict()
+        for docId in self.docmap:
+            score = 0
+            for tok in tokens:
+                score += self.bm25(docId, tok)
+            scores[docId] = score
+        
+        sorted_scores = sorted(scores.items(), 
+            key = lambda x: x[1],
+            reverse=True
+        )
+        sorted_scores = sorted_scores[:limit]
+
+        for doc_id, score in sorted_scores:
+            print(f"{doc_id} {self.docmap[doc_id]['title']} - Score: {score}")
+
+
+
     def build(self):
         movies = load_data()
         for mov in movies:
@@ -143,6 +169,10 @@ def bm25_tf_command(doc_id, term):
     print(f"BM25 TF score of '{term}' in document '{doc_id}': {bm25tf:.2f}")
     return bm25tf
 
+def bm25search(query, limit=5):
+    invIdx = InvertedIndex()
+    invIdx.load()
+    bm25_result = invIdx.bm25_search(query, limit)
 
 def build_command():
     buildInvertedIndex = InvertedIndex()
