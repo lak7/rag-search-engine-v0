@@ -28,6 +28,20 @@ class SemanticSearch:
         np.save(self.embeddings_path, self.embeddings)
         return self.embeddings
 
+    def search(self, query, limit):
+        if self.embeddings is None:
+            return ValueError("No embeddings loaded. Call `load_or_create_embeddings` first.")
+        
+        query_embedding = self.generate_embedding(query)
+        similarities = []
+        for doc_emb, doc in zip(self.embeddings, self.documents):
+            similarity = cosine_similarity(doc_emb, query_embedding)
+            similarities.append((similarity, doc))
+
+        similarities.sort(key=lambda x: x[0], reverse=True)
+        return [{'score': sc, 'title':doc["title"], 'desc':doc["description"]} for sc, doc in similarities[:limit]]
+
+
     def load_or_create_embeddings(self, documents):
         self.documents = documents
         self.document_map = {}
@@ -40,6 +54,14 @@ class SemanticSearch:
                 return self.embeddings
 
         return self.build_embeddings(documents)
+
+def search_query(query):
+    semanticSearch = SemanticSearch()
+    documents = load_data()
+    semanticSearch.load_or_create_embeddings(documents)
+    result = semanticSearch.search(query, 2)
+    for idx, res in enumerate(result):
+        print(f"{idx}. {res['title']}")
 
 def verify_model():
     semanticSearch = SemanticSearch()
@@ -60,3 +82,21 @@ def verify_embeddings():
     embeddings = semanticSearch.load_or_create_embeddings(documents)
     print(f"Number of docs:   {len(documents)}")
     print(f"Embeddings shape: {embeddings.shape[0]} vectors in {embeddings.shape[1]} dimensions")
+
+def embed_query_text(query):
+    semanticSearch = SemanticSearch()
+    documents = load_data()
+    query_embedding = semanticSearch.generate_embedding(query)
+    print(f"Query: {query}")
+    print(f"First 5 dimensions: {query_embedding[:5]}")
+    print(f"Shape: {query_embedding.shape}")
+
+def cosine_similarity(vec1, vec2):
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+
+    return dot_product / (norm1 * norm2)
