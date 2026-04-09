@@ -2,7 +2,7 @@
 
 import argparse
 
-from lib.semantic_search import embed_query_text, embed_text, search_query, verify_embeddings, verify_model
+from lib.semantic_search import embed_query_text, embed_text, fixed_size_chunking, search_query, verify_embeddings, verify_model
 
 def main():
     parser = argparse.ArgumentParser(description="Semantic Search CLI")
@@ -20,6 +20,9 @@ def main():
 
     search_query_parser = subparsers.add_parser("search", help="Embeds text into a vector")
     search_query_parser.add_argument("query", type=str, help="Query to embed")
+
+    chunk_query_parser = subparsers.add_parser("chunk", help="To chunk")
+    chunk_query_parser.add_argument("text", type=str, help="Text to chunk")
  
     args = parser.parse_args()
 
@@ -34,6 +37,8 @@ def main():
             embed_query_text(args.query)
         case "search":
             search_query(args.query)
+        case "chunk":
+            fixed_size_chunking(args.text)
         case _:
             parser.print_help()
 

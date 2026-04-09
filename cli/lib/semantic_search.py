@@ -55,6 +55,18 @@ class SemanticSearch:
 
         return self.build_embeddings(documents)
 
+def fixed_size_chunking(text, chunk_size=200):
+    words = text.split()
+    chunks = []
+    for i in range(0, len(words), chunk_size):
+        chunks.append("".join(words[i: i+chunk_size]))
+
+    for i, chunk in enumerate(chunks):
+        print(f"{i+1}. {chunk}")
+    return chunks
+
+
+
 def search_query(query):
     semanticSearch = SemanticSearch()
     documents = load_data()
