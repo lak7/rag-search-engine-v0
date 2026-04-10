@@ -1,3 +1,4 @@
+import re
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
@@ -69,8 +70,21 @@ def fixed_size_chunking(text, overlap, chunk_size=50):
         print(f"{i+1}. {chunk}")
     return chunks
 
+def semantic_chunking(text, overlap=0, chunk_size=4):
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    chunks = []
+    step_size = chunk_size-overlap
+    for i in range(0, len(sentences), step_size):
+        chunk_words=sentences[i: i+chunk_size]
+        if len(chunk_words) <= overlap:
+            break
+        chunks.append("".join(chunk_words))
 
+    for i, chunk in enumerate(chunks):
+        print(f"{i+1}. {chunk}")
+    return chunks
 
+    
 def search_query(query):
     semanticSearch = SemanticSearch()
     documents = load_data()
