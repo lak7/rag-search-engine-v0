@@ -59,8 +59,8 @@ class SemanticSearch:
 
 
 class ChunkedSemanticSearch(SemanticSearch):
-    def __init__(self, model_name = "all-MiniLM-L6-v2") -> None:
-        super().__init__(model_name)
+    def __init__(self) -> None:
+        super().__init__()
         self.chunk_embeddings = None
         self.chunk_metadata = None
         self.chunk_embeddings_path = CACHE_PATH / "chunk_embeddings.npy"
@@ -78,7 +78,7 @@ class ChunkedSemanticSearch(SemanticSearch):
             if desc.strip == '':
                 continue
             _chunk = semantic_chunking(desc, overlap=1, chunk_size=4)
-            all_chunks.append(_chunk)
+            all_chunks += _chunk
             for cidx in range(len(_chunk)):
                 chunk_metadata.append(
                     {"movie_idx": midx,
@@ -89,13 +89,29 @@ class ChunkedSemanticSearch(SemanticSearch):
         self.chunk_embeddings = self.model.encode(all_chunks)
         self.chunk_metadata = chunk_metadata
         np.save(self.chunk_embeddings_path, self.chunk_embeddings)
-        with open(self.chunk_metadata_path, "wb") as f:
+        with open(self.chunk_metadata_path, "w") as f:
             json.dump(
                 {"chunks": chunk_metadata, "total_chunks": len(all_chunks)},
                 f,
                 indent=2,
             )
         return self.chunk_embeddings
+
+    def load_or_create_chunk_embeddings(self, documents: list[dict]) -> np.ndarray:
+        self.documents = documents
+        self.document_map = {doc['id']: doc for doc in documents}
+
+        if (
+            self.chunk_embeddings_path.exists()
+            and self.chunk_metadata_path.exists()
+        ):
+            self.chunk_embeddings = np.load(self.chunk_embeddings_path)
+            with open(self.chunk_metadata_path, "r") as f:
+                metadata = json.load(f)
+            self.chunk_metadata = metadata["chunks"]
+            return self.chunk_embeddings
+
+        return self.build_chunk_embeddings(documents)
 
 
 def fixed_size_chunking(text, overlap, chunk_size=50):
@@ -154,6 +170,12 @@ def verify_embeddings():
     embeddings = semanticSearch.load_or_create_embeddings(documents)
     print(f"Number of docs:   {len(documents)}")
     print(f"Embeddings shape: {embeddings.shape[0]} vectors in {embeddings.shape[1]} dimensions")
+
+def embed_chunks():
+    documents = load_data()
+    chunked_search = ChunkedSemanticSearch()
+    embeddings = chunked_search.load_or_create_chunk_embeddings(documents)
+    print(f"Generated {len(embeddings)} chunked embeddings")
 
 def embed_query_text(query):
     semanticSearch = SemanticSearch()

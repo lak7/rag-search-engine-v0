@@ -2,7 +2,7 @@
 
 import argparse
 
-from lib.semantic_search import embed_query_text, embed_text, fixed_size_chunking, search_query, semantic_chunking, verify_embeddings, verify_model
+from lib.semantic_search import embed_chunks, embed_query_text, embed_text, fixed_size_chunking, search_query, semantic_chunking, verify_embeddings, verify_model
 
 def main():
     parser = argparse.ArgumentParser(description="Semantic Search CLI")
@@ -14,6 +14,8 @@ def main():
     embed_text_parser.add_argument("text", type=str, help="Text to embed")
 
     subparsers.add_parser("verify_embeddings", help="Verifies cached movie embeddings")
+
+    subparsers.add_parser("embed_chunks", help="Load or build chunked movie embeddings")
 
     embed_query_text_parser = subparsers.add_parser("embedquery", help="Embeds text into a vector")
     embed_query_text_parser.add_argument("query", type=str, help="Query to embed")
@@ -47,6 +49,8 @@ def main():
             fixed_size_chunking(args.text, args.overlap)
         case "semantic_chunk":
             semantic_chunking(args.text, args.overlap, args.chunk_size)
+        case "embed_chunks":
+            embed_chunks()
         case _:
             parser.print_help()
 
