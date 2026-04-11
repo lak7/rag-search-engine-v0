@@ -1,3 +1,4 @@
+import json
 import re
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -56,6 +57,47 @@ class SemanticSearch:
 
         return self.build_embeddings(documents)
 
+
+class ChunkedSemanticSearch(SemanticSearch):
+    def __init__(self, model_name = "all-MiniLM-L6-v2") -> None:
+        super().__init__(model_name)
+        self.chunk_embeddings = None
+        self.chunk_metadata = None
+        self.chunk_embeddings_path = CACHE_PATH / "chunk_embeddings.npy"
+        self.chunk_metadata_path = CACHE_PATH / "chunk_metadata.json"
+
+    def build_chunk_embeddings(self, documents):
+        self.documents = documents
+        self.document_map = {doc['id']:doc for doc in documents}
+
+        all_chunks = []
+        chunk_metadata = []
+
+        for midx, doc in enumerate(documents):
+            desc = doc["description"]
+            if desc.strip == '':
+                continue
+            _chunk = semantic_chunking(desc, overlap=1, chunk_size=4)
+            all_chunks.append(_chunk)
+            for cidx in range(len(_chunk)):
+                chunk_metadata.append(
+                    {"movie_idx": midx,
+                    "chunk_idx": cidx,
+                    "total_chunks": len(_chunk)}
+                )
+            
+        self.chunk_embeddings = self.model.encode(all_chunks)
+        self.chunk_metadata = chunk_metadata
+        np.save(self.chunk_embeddings_path, self.chunk_embeddings)
+        with open(self.chunk_metadata_path, "wb") as f:
+            json.dump(
+                {"chunks": chunk_metadata, "total_chunks": len(all_chunks)},
+                f,
+                indent=2,
+            )
+        return self.chunk_embeddings
+
+
 def fixed_size_chunking(text, overlap, chunk_size=50):
     words = text.split()
     chunks = []
@@ -78,7 +120,7 @@ def semantic_chunking(text, overlap=0, chunk_size=4):
         chunk_words=sentences[i: i+chunk_size]
         if len(chunk_words) <= overlap:
             break
-        chunks.append("".join(chunk_words))
+        chunks.append(" ".join(chunk_words))
 
     for i, chunk in enumerate(chunks):
         print(f"{i+1}. {chunk}")
