@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 import re
 import numpy as np
@@ -112,6 +113,45 @@ class ChunkedSemanticSearch(SemanticSearch):
             return self.chunk_embeddings
 
         return self.build_chunk_embeddings(documents)
+
+    def search_chunks(self, query: str, limit: int = 10):
+        embedded_query = self.generate_embedding(query)
+        chunk_scores = []
+        movie_scores = defaultdict(lambda: 0)
+        for idx in range(len(self.chunk_embeddings)):
+            chunk_emb = self.chunk_embeddings[idx]
+            metadata = self.chunk_metadata[idx]
+            midx, cidx = metadata['movie_idx'], metadata['chunk_idx']
+            similarity = cosine_similarity(embedded_query, chunk_emb)
+            chunk_scores.append({
+                "movie_idx": midx,
+                "chunk_idx": cidx,
+                "score": similarity
+            })
+            movie_scores[midx] = max(movie_scores[midx], similarity)
+        sorted_final_scores = sorted(movie_scores.items(), key=lambda x:x[1], reverse=True)
+        res = []
+        for midx, score in sorted_final_scores[:limit]:
+            doc = self.document_map[midx]
+            res.append(
+                {
+                    "id": doc['id'],
+                    "title": doc['title'],
+                    "document": doc['description'][:100],
+                    "score": round(score, 4),
+                    "metadata": {}
+                }
+            )
+        return res
+
+def search_chunked(query, limit=5):
+    chunked_obj = ChunkedSemanticSearch()
+    movies = load_data()
+    chunked_obj.load_or_create_chunk_embeddings(movies)
+    results = chunked_obj.search_chunks(query, limit)
+    for i, res in enumerate(results):
+        print(f"\n{i+1}. {res['title']} (score: {res['score']:.4f})")
+        print(f"   {res['document']}...")
 
 
 def fixed_size_chunking(text, overlap, chunk_size=50):
