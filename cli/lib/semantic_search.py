@@ -168,7 +168,10 @@ def fixed_size_chunking(text, overlap, chunk_size=50):
         print(f"{i+1}. {chunk}")
     return chunks
 
-def semantic_chunking(text, overlap=0, chunk_size=4):
+def semantic_chunking(text, overlap=0, chunk_size=4): 
+    text = text.strip()
+    if not text:
+        return []
     sentences = re.split(r"(?<=[.!?])\s+", text)
     chunks = []
     step_size = chunk_size-overlap
