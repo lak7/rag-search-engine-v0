@@ -95,11 +95,20 @@ class InvertedIndex:
             key = lambda x: x[1],
             reverse=True
         )
-        sorted_scores = sorted_scores[:limit]
+        results = sorted_scores[:limit]
+        format_results = []
 
-        # for doc_id, score in sorted_scores:
-        #     print(f"{doc_id} {self.docmap[doc_id]['title']} - Score: {score}")
-        return sorted_scores
+        for doc_id, score in results:
+            title = self.docmap[doc_id]['title']
+            
+            format_results.append({
+                "doc_id": doc_id,
+                "title": title,
+                "score": score,
+                "description": self.docmap[doc_id].get('description', "")
+            })
+
+        return format_results
 
 
 

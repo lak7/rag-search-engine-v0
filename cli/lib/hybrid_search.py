@@ -21,8 +21,8 @@ class HybridSearch:
         return self.idx.bm25_search(query, limit)
 
     def weighted_search(self, query, alpha=0.5, limit=5):
-        bm25_res = self._bm25_search(query, limit*500 )
-        sem_res = self.semantic_search.search_chunks(query, limit*500)
+        bm25_res = self._bm25_search(query, limit )
+        sem_res = self.semantic_search.search_chunks(query, limit)
         combined_res = combined_result(bm25_res, sem_res, alpha)
         return combined_res
 
@@ -33,10 +33,11 @@ def weighted_search(query, alpha=0.5, limit=5):
     documents = load_data()
     hybrid_search_obj = HybridSearch(documents)
     res = hybrid_search_obj.weighted_search(query, alpha, limit)
+    # print(f"Final RES: {res[:limit]}")
     for idx, re in enumerate(res[:limit]):
-        print(f"{idx+1}. {re.title}")
-        print(f"Hybrid Score: {re.hybrid_score}")
-        print(f"BM25: {re.bm25_score}, Semantic: {re.sem_score}")
+        print(f"{idx+1}. {re['title']}")
+        print(f"Hybrid Score: {re['hybrid_score']}")
+        print(f"BM25: {re['bm25_score']}, Semantic: {re['sem_score']}")
 
 
 def normalize_search_results(results):
@@ -48,6 +49,7 @@ def normalize_search_results(results):
     return results
 
 def combined_result(bm25_res, sem_res, alpha):
+    # print(f"SEM RES: {sem_res}")
     bm25_norm = normalize_search_results(bm25_res)
     sem_norm = normalize_search_results(sem_res)
 
@@ -59,7 +61,7 @@ def combined_result(bm25_res, sem_res, alpha):
             'bm25_score': norm['normalized_score'],
             'sem_score': 0.,
             'title': norm['title'],
-            'description': norm['description']
+            # 'description': norm['description']
         }
     
     for norm in sem_norm:
@@ -70,13 +72,13 @@ def combined_result(bm25_res, sem_res, alpha):
                 'bm25_score': 0.,
                 'sem_score': norm['normalized_score'],
                 'title': norm['title'],
-                'description': norm['description']
+                # 'description': norm['description']
             }
     
     for k,v in combined_norm.items():
-        combined_norm[k]['hybrid_score'] = hybrid_score(v['bm25_score', 'sem_score', alpha])
+        combined_norm[k]['hybrid_score'] = hybrid_score(v['bm25_score'], v['sem_score'], alpha)
 
-    final_res = sorted(combined_norm.values(), key=lambda x:x[0], reverse=True)
+    final_res = sorted(list(combined_norm.values()), key=lambda x:x['hybrid_score'], reverse=True)
     return final_res
 
 
