@@ -21,11 +21,12 @@ class HybridSearch:
         return self.idx.bm25_search(query, limit)
 
     def weighted_search(self, query, alpha=0.5, limit=5):
-        bm25_res = self._bm25_search(query, limit )
-        sem_res = self.semantic_search.search_chunks(query, limit)
+        bm25_res = self._bm25_search(query, limit*500 )
+        sem_res = self.semantic_search.search_chunks(query, limit*500)
         combined_res = combined_result(bm25_res, sem_res, alpha)
         return combined_res
 
+    # NOT IMPLEMENTING YET 
     def rrf_search(self, query, k, limit=10):
         raise NotImplementedError("RRF hybrid search is not implemented yet.")
 
