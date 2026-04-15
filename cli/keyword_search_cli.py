@@ -36,6 +36,7 @@ def main() -> None:
 
     bm25search_parser = subparsers.add_parser("bm25search", help="Search movies using full BM25 scoring")
     bm25search_parser.add_argument("query", type=str, help="Search query")
+    bm25search_parser.add_argument("--limit", type=int, help="Limit to retrieve")
 
 
     args = parser.parse_args()
@@ -59,7 +60,7 @@ def main() -> None:
         case "bm25tf":
             bm25_tf_command(args.doc_id, args.term)
         case "bm25search":
-            bm25search(args.query)
+            bm25search(args.query, args.limit)
         case _:
             parser.print_help()
 

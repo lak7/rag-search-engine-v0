@@ -97,8 +97,9 @@ class InvertedIndex:
         )
         sorted_scores = sorted_scores[:limit]
 
-        for doc_id, score in sorted_scores:
-            print(f"{doc_id} {self.docmap[doc_id]['title']} - Score: {score}")
+        # for doc_id, score in sorted_scores:
+        #     print(f"{doc_id} {self.docmap[doc_id]['title']} - Score: {score}")
+        return sorted_scores
 
 
 
